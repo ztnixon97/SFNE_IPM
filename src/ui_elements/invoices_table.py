@@ -1,9 +1,9 @@
 # src/ui_elements/invoices_table.py
 from PyQt5.QtWidgets import QTableWidgetItem, QPushButton
-
 from src.ui_elements.base_crud_table import BaseCRUDTable
-
+from PyQt5.QtCore import  pyqtSignal
 class InvoicesTable(BaseCRUDTable):
+    data_saved = pyqtSignal()
     def __init__(self, database_connection, contract_id = None, do_id = None, parent=None):
         headers = ['Invoice ID', 'Invoice Number', 'Issue Date', 'Total Amount', 'Status']
         self.contract_id = contract_id
@@ -14,9 +14,15 @@ class InvoicesTable(BaseCRUDTable):
         self.open_details_button = QPushButton("Details")
         self.open_details_button.clicked.connect(self.open_selected_invoice)
         self.button_layout.addWidget(self.open_details_button)
-
+        if do_id is not None:
+            print(do_id)
+            self.load_data = self.load_data_do
+        self.load_data()
+        self.add_empty_row()
     def open_selected_invoice(self):
         select_row = self.currentRow()
+        if select_row == -1:
+            return
         invoice_id = self.item(select_row, 0).text()
         try:
             self.parent.open_invoice_details(invoice_id)
@@ -33,19 +39,20 @@ class InvoicesTable(BaseCRUDTable):
 
         # Populate the table with data
         for invoice in invoices:
-            print(invoice)
             self.add_row(invoice)
 
 
-    def load_date_do(self):
+    def load_data_do(self):
         """Load Data for Delivery Orders"""
+        print("loading do data")
         self.setRowCount(0)
         cursor = self.database_connection.cursor
-        query = "SELECT invoice_id, issue_date, cost, status FROM management.invoices WHERE delivery_order_id = %s"
+        query = "SELECT invoice_id, invoice_number, issue_date, cost, status FROM management.invoices WHERE delivery_order_id = %s"
         cursor.execute(query, (self.do_id,))
         invoices = cursor.fetchall()
         # Populate the table with data
         for invoice in invoices:
+            print(invoice)
             self.add_row(invoice)
 
 

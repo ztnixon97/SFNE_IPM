@@ -14,8 +14,7 @@ class BaseCRUDTable(QTableWidget):
 
         # Add CRUD buttons for each table
         self.init_crud_buttons()
-        self.load_data()
-        self.add_empty_row()
+
 
     def init_crud_buttons(self):
         """Initialize CRUD buttons (Add, Edit, Delete)."""

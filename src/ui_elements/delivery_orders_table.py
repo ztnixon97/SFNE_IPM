@@ -16,9 +16,13 @@ class DeliveryOrdersTable(BaseCRUDTable):
         self.open_details_button = QPushButton("Details")
         self.open_details_button.clicked.connect(self.open_selected_delivery_order)
         self.button_layout.addWidget(self.open_details_button)
+        self.load_data()
+        self.add_empty_row()
 
     def open_selected_delivery_order(self):
         select_row = self.currentRow()
+        if select_row == -1:
+            return
         delivery_order_id = self.item(select_row, 0).text()
         try:
             self.parent.open_delivery_order_details(delivery_order_id)
@@ -72,12 +76,14 @@ class DeliveryOrdersTable(BaseCRUDTable):
                     """, (do_number, award_price, award_date, complete_date, producer, id))
             except Exception as e:
                 print(f"Failed to save delivery order: {e}")
+                self.database_connection.rollback()
 
         try:
             self.database_connection.commit()  # Commit the changes
             print("Delivery Orders saved.")
         except Exception as e:
             print(f"Failed to save Delivery Orders: {e}")
+            self.database_connection.rollback()
 
     def delete_selected_row(self):
         """Delete the currently selected row."""
@@ -86,3 +92,6 @@ class DeliveryOrdersTable(BaseCRUDTable):
         id = self.item(select_row, 0).text()
         self.database_connection.cursor.execute("DELETE FROM public.delivery_orders WHERE id = %s", (id,))
         self.removeRow(select_row)
+
+    def open_delivery_lots_details(self, delivery_lot_id):
+        pass

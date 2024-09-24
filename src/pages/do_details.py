@@ -1,14 +1,19 @@
 from PyQt5.QtWidgets import QMainWindow, QTextEdit, QDateEdit,QVBoxLayout, QLabel, QWidget, QPushButton, QFormLayout, QLineEdit
 from PyQt5.QtCore import QDate, pyqtSignal
+
+from src.pages.lot_detail import DeliveryLotDetailsPage
+from src.ui_elements.delivery_lots_table import DeliveryLotsTable
 from src.ui_elements.invoices_table import InvoicesTable
 from src.ui_elements.documents_table import DocumentsTable
 
 class DeliveryOrderDetailsPage(QMainWindow):
     data_saved = pyqtSignal()
-    def __init__(self, delivery_order_id, database_connection):
+    def __init__(self, delivery_order_id, database_connection, parent = None):
         super().__init__()
 
         self.delivery_order_id = delivery_order_id
+
+        self.contract_id = parent.contract_id
         self.database = database_connection
 
         # Set the window Title
@@ -20,16 +25,22 @@ class DeliveryOrderDetailsPage(QMainWindow):
         self.delivery_order_details_form = self.create_delivery_order_details_form()
         layout.addLayout(self.delivery_order_details_form)
 
-        # TODO: Add Delivery Lots Table
+        self.lots_table = DeliveryLotsTable(self.database, do_id = self.delivery_order_id, contract_id = self.contract_id,  parent= self)
+        self.lots_table.data_saved.connect(self.tables_updated)
+        layout.addWidget(QLabel("Delivery Lots"))
+        layout.addWidget(self.lots_table)
+        layout.addWidget(self.lots_table.get_button_widget())
 
         # Create and add the Invoices Table
-        self.invoices_table = InvoicesTable(self.database, self.delivery_order_id)
+        self.invoices_table = InvoicesTable(self.database, do_id = self.delivery_order_id, contract_id = self.contract_id, parent = self)
+        self.invoices_table.data_saved.connect(self.tables_updated)
         layout.addWidget(QLabel("Invoices"))
         layout.addWidget(self.invoices_table)
         layout.addWidget(self.invoices_table.get_button_widget())
 
         # Create and add the Documents Table
-        self.documents_table = DocumentsTable(self.database, self.delivery_order_id)
+        self.documents_table = DocumentsTable(self.database,do_id= self.delivery_order_id, contract_id = self.contract_id, parent = self)
+        self.documents_table.data_saved.connect(self.tables_updated)
         layout.addWidget(QLabel("Documents"))
         layout.addWidget(self.documents_table)
         layout.addWidget(self.documents_table.get_button_widget())
@@ -94,9 +105,10 @@ class DeliveryOrderDetailsPage(QMainWindow):
 
     def save_all_changes(self):
         """Save all changes, including delivery order details, invoices, and documents."""
-        self.save_do_details()  # Save delivery order details
-        #self.invoices_table.save_data()  # Save invoices
-        #self.documents_table.save_data()  # Save documents
+        self.save_do_details()
+        self.lots_table.save_data()# Save delivery order details
+        self.invoices_table.save_data()  # Save invoices
+        self.documents_table.save_data()  # Save documents
 
         print("All changes saved to the database")
 
@@ -144,4 +156,19 @@ class DeliveryOrderDetailsPage(QMainWindow):
             # Commit the changes
             print("Delivery Order details updated")
         except Exception as e:
+            self.database.rollback()
             print(f"Failed to save Delivery Order Details: {e}")
+
+    def tables_updated(self):
+        print("emitting table update")
+        self.data_saved.emit()
+
+    def open_delivery_lot_details(self, lot_id):
+        try:
+            self.lot_detail_page = DeliveryLotDetailsPage(lot_id, self.database)
+            self.lot_detail_page.data_saved.connect(self.refresh_lot_data)
+            self.lot_detail_page.show()
+        except Exception as e:
+            print(f"failed to open lot details: {e}")
+    def refresh_lot_data(self):
+        self.lots_table.load_data()

@@ -156,15 +156,23 @@ class ContractDetailsPage(QMainWindow):
         except Exception as e:
             print(f"Failed saving Contract Details: {e}")
 
-    def open_delivery_order_details(self, delivery_order_id):
-        self.do_details_page = DeliveryOrderDetailsPage(delivery_order_id, self.database_connection)
-        self.do_details_page.data_saved.connect(self.refresh_do_data)
-        self.do_details_page.show()
+    def open_delivery_order_details(self, delivery_order_id,):
+        try:
+            self.do_details_page = DeliveryOrderDetailsPage(delivery_order_id, self.database_connection, parent=self)
+            self.do_details_page.data_saved.connect(self.refresh_data)
+            self.do_details_page.show()
+        except Exception as e:
+            print(f"Failed to open delivery order details: {e}")
+
 
     def open_invoice_details(self, invoice_id):
-        self.invoice_details_page = InvoiceDetailsPage(invoice_id, self.database_connection)
-        self.invoice_details_page.data_saved.connect(self.refresh_invoice_data)
-        self.invoice_details_page.show()
+        try:
+            self.invoice_details_page = InvoiceDetailsPage(invoice_id, self.database_connection)
+            self.invoice_details_page.data_saved.connect(self.refresh_invoice_data)
+            self.invoice_details_page.show()
+        except Exception as e:
+            print(f"Failed to open invoice details: {e}")
+
 
     def open_document_details(self, document_id):
         try:
@@ -172,11 +180,13 @@ class ContractDetailsPage(QMainWindow):
             self.document_details_page.data_saved.connect(self.refresh_document_data)
             self.document_details_page.show()
         except Exception as e:
-            print(e)
+            print(f"Failed to open document details: {e}")
 
     def refresh_document_data(self):
+        print("reloading document data")
         self.documents_table.load_data()
-        self.documents_table.add_button.add_empty_row()
+        self.documents_table.add_empty_row()
+
     def refresh_do_data(self):
         self.delivery_orders_table.load_data()
         self.delivery_orders_table.add_empty_row()
@@ -184,3 +194,11 @@ class ContractDetailsPage(QMainWindow):
     def refresh_invoice_data(self):
         self.invoices_table.load_data()
         self.invoices_table.add_empty_row()
+
+    def refresh_data(self):
+        try:
+            self.refresh_document_data()
+            self.refresh_do_data()
+            self.refresh_invoice_data()
+        except Exception as e:
+            print(e)

@@ -1,4 +1,13 @@
+import os
 import sys
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
+
+# Set the working directory to the parent directory
+os.chdir(parent_dir)
+print(f"Working directory set to: {parent_dir}")
+
 from PyQt5.QtWidgets import QApplication, QMainWindow, QGridLayout, QWidget
 from PyQt5.QtCore import Qt
 
@@ -30,7 +39,7 @@ class ManagementView(QMainWindow):
 
     def load_contract_cards(self):
         cursor = self.database.cursor
-        cursor.execute("SELECT contract_id, name, spend_ceiling, spend_current, mission_manager FROM management.contracts")
+        cursor.execute("SELECT contract_id, name, spend_ceiling, spend_current, mission_manager FROM management.contracts where type = 'Contract'")
         contracts = cursor.fetchall()
 
         self.cards = []
@@ -45,6 +54,19 @@ class ManagementView(QMainWindow):
             self.cards.append(card)
 
         # Adjust the layout to add cards in grid
+        self.adjust_grid_layout()
+    def load_agreement_cards(self):
+        cursor = self.database.cursor
+        cursor.execute("SELECT contract_id, name, spend_ceiling, spend_current, mission_manager FROM management.agreements where type = 'Agreement'")
+        agreements = cursor.fetchall()
+
+        self.cards = []
+        for agreement in agreements:
+            contract_id, name, spend_ceiling, spend_current, mission_manager = agreement
+            card = ClickableCard(contract_id, name, spend_ceiling, spend_current, mission_manager)
+            card.clicked.connect(lambda _, id=contract_id: self.open_contract(id))
+
+            self.cards.append(card)
         self.adjust_grid_layout()
 
     def adjust_grid_layout(self, event=None):
@@ -72,6 +94,8 @@ class ManagementView(QMainWindow):
                 col = 0
                 row += 1
 
+
+
     def open_contract(self, contract_id):
         """Open the ContractDetailsPage when a contract is clicked."""
         try:
@@ -79,6 +103,10 @@ class ManagementView(QMainWindow):
             self.contract_details_page.show()
         except Exception as e:
             print(f"Error opening contract: {e}")
+
+    def open_agreement(self, contract_id):
+        pass
+        # TODO: Implment Agreement Details Page
 
 if __name__ == "__main__":
 

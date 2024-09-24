@@ -1,7 +1,7 @@
 import psycopg2
 import configparser
 
-CONFIG_FILE_PATH = 'config.ini'  # Path to your config file
+CONFIG_FILE_PATH = 'src/config.ini'  # Path to your config file
 
 class SFNEIpmDatabase:
     def __init__(self):
